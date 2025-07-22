@@ -1,7 +1,7 @@
 import os
 
 def clear():
-    clear = lambda: os.system('cls' if os.name == 'nt' else 'clear')
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 def show_banner():
     print(r"""
