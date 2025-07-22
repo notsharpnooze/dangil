@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')

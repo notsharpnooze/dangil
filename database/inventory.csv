@@ -1,11 +1,5 @@
-Nombre,Cantidad,Precio
-Canasta,5,10
-Botella,2,50
-llavero,7,89
-control,1,82
-cuadro,5,1
-bocina,1,54
-disco,8,50
-mesa,2,45
-mouse,5,89
-caja,3,54
+ID,Nombre,Cantidad,Precio,
+6dc4,Termo 20 oz,0,150
+be2a,Llavero peq. ,1,10
+6adc,Taza 16oz,7,85
+d3a2,Taza 20oz,17,90

@@ -1,6 +1,7 @@
 import csv
 import os  
-
+import uuid
+import subprocess
 
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')    
@@ -32,11 +33,13 @@ def get_choice():
         except ValueError:
             print("Entrada no válida. Por favor ingrese un número.")
 
+#OPTIONS
 def add_product():
     
     while True:
         file = open('database/inventory.csv', 'a', newline='')
         clear()
+        p_id = str(uuid.uuid4())[:4]
         name = input("Ingrese el nombre del producto: ")
         quantity = input("Ingrese la cantidad del producto: ")
         price = input("Ingrese el precio de compra del producto: ")
@@ -44,8 +47,8 @@ def add_product():
         with open('database/inventory.csv', 'a', newline='') as file:
             writer = csv.writer(file)
             if file.tell() == 0:
-                writer.writerow(['Nombre', 'Cantidad', 'Precio'])
-            writer.writerow([name, quantity, price])
+                writer.writerow(['ID','Nombre', 'Cantidad', 'Precio'])
+            writer.writerow([p_id, name, quantity, price])
         clear()
         print("Producto agregado exitosamente.")
            
@@ -78,10 +81,10 @@ def view_inventory():
         clear()
         print("\nInventario actual:\n")
         # Print only first 4 columns for display
-        print(f"{header[0]:<15} {header[1]:<15} {header[2]:<8}")
+        print(f"{header[1]:<15} {header[2]:<15} {header[3]:<8}")
         print("-" * 50)
         for row in data:
-            print(f"{row[0]:<15} {row[1]:<15} {row[2]:<8}")
+            print(f"{row[1]:<15} {row[2]:<15} {row[3]:<8}")
         print()
 
         choice = input("Presiona 'x' para organizar, o 'b' para regresar al menu principal: ").strip().lower()
@@ -95,9 +98,9 @@ def view_inventory():
 
 def sort_entries(data):
     sort_options = {
-        "1": ("Nombre (A-Z)", lambda x: x[0].lower()),
-        "2": ("Cantidad (Menor a Mayor)", lambda x: int(x[1])),
-        "3": ("Precio (Menor a Mayor)", lambda x: int(x[2])),
+        "1": ("Nombre (A-Z)", lambda x: x[1].lower()),
+        "2": ("Cantidad (Menor a Mayor)", lambda x: int(x[2])),
+        "3": ("Precio (Menor a Mayor)", lambda x: int(x[3])),
         "4": ("Por orden de entrada", None)
 }
 
@@ -117,12 +120,127 @@ def sort_entries(data):
             print("Opcion no valida.")
     return data
 
-
-
 def update_product():
+    
+        with open('database/inventory.csv', 'r') as file:
+            rows = list(csv.reader(file))
 
-            break
+        if len(rows) <= 1:
+            print("\n No hay productos para actualizar. \n")
+            return
+        
+        header = rows[0]
+        data = rows[1:]
 
+        filtered = data
+        filtered = sort_entries(filtered)
+
+        clear()
+        print("\nProductos disponibles para actualizar:\n")
+        print(f"{header[1]:<15} {header[2]:<8} {header[3]:<8}")
+        print("-" * 50)
+        for i, row in enumerate(filtered, start=1):
+            print(f"{i:<5} {row[1]:<15} {row[2]:<8} {row[3]:<8}")
+                  
+        select = input('\nSeleccione el producto a actualizar (número) o "c" para cancelar: ').strip()
+
+        if select.lower() == 'c':
+            main()
+
+        try:   
+            index = int(select) - 1
+            if index < 0 or index >= len(filtered):
+                print("Número de producto no válido.")
+                return
+            to_update = filtered[index]
+        except ValueError:
+            print("Entrada no válida. Por favor ingrese un número.")
+            return
+        
+        #Confirmación de actualización
+        print(f"\nQuieres actualizar {to_update[1]}? ")
+        confirm = input("Presiona 's' para confirmar o cualquier otra tecla para cancelar: ").strip().lower()
+        if confirm != 's':
+            print("Actualización cancelada.")
+            return
+        
+        # Solicitar nuevos datos
+        nuevo_nombre = input(f"Nuevo nombre [{to_update[1]}]: ").strip() or to_update[1]
+        nueva_cantidad = input(f"Nueva cantidad [{to_update[2]}]: ").strip() or to_update[2]
+        nuevo_precio = input(f"Nuevo precio [{to_update[3]}]: ").strip() or to_update[3]
+   
+        # Buscar el índice real en data
+        real_index = data.index(to_update)
+        data[real_index] = [nuevo_nombre, nueva_cantidad, nuevo_precio]
+
+        # Guardar cambios en el archivo
+        with open('database/inventory.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(header)
+            writer.writerows(data)
+
+        print("\nProducto actualizado exitosamente.\n")
+        input("Presiona Enter para continuar...")
+        main()
+
+def delete_product():
+    with open('database/inventory.csv', 'r') as file:
+        rows = list(csv.reader(file))
+
+    if len(rows) <= 1:
+        print("\n No hay productos para eliminar. \n")
+        return
+
+    header = rows[1]
+    data = rows[1:]
+
+    filtered = data
+    filtered = sort_entries(filtered)
+
+    clear()
+    print("\nProductos disponibles para eliminar:\n")
+    print(f"{header[1]:<15} {header[2]:<8} {header[3]:<8}")
+    print("-" * 50)
+    for i, row in enumerate(filtered, start=1):
+        print(f"{i:<5} {row[1]:<15} {row[2]:<8} {row[3]:<8}")
+
+    select = input('\nSeleccione el producto a eliminar (número) o "c" para cancelar: ').strip()
+
+    if select.lower() == 'c':
+        main()
+        return
+
+    try:
+        index = int(select) - 1
+        if index < 0 or index >= len(filtered):
+            print("Número de producto no válido.")
+            return
+        to_delete = filtered[index]
+    except ValueError:
+        print("Entrada no válida. Por favor ingrese un número.")
+        return
+
+    # Confirmación de eliminación
+    print(f"\n¿Seguro que quieres eliminar {to_delete[1]}? ")
+    confirm = input("Presiona 's' para confirmar o cualquier otra tecla para cancelar: ").strip().lower()
+    if confirm != 's':
+        print("Eliminación cancelada.")
+        clear()
+        main()
+
+
+    # Eliminar el producto
+    data.remove(to_delete)
+
+    # Guardar cambios en el archivo
+    with open('database/inventory.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(header)
+        writer.writerows(data)
+
+    print("\nProducto eliminado exitosamente.\n")
+    input("Presiona Enter para continuar...")
+    main()
 
 def main():
     clear()
@@ -133,13 +251,19 @@ def main():
         
         if choice == 1:
             add_product()
+            break
         elif choice == 2:
             view_inventory()
+            break
         elif choice == 3:
             update_product()
+            break
         elif choice == 4:
             delete_product()
+            break
         elif choice == 5:
+            import subprocess
+            subprocess.run(["python", "main.py"])
             break
                                                         
 main()
