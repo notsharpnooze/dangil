@@ -1,5 +1,8 @@
 import os
-import subprocess
+import sys
+
+from modules.inventory import main as inventory_main
+from modules.orders import main as orders_main
 
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -36,35 +39,25 @@ def get_choice():
             print("Entrada no válida. Por favor ingrese un número.")
 
 def main():
-    clear()
-    show_banner()
     while True:
+        clear()
+        show_banner()
         show_menu()
         choice = get_choice()
         
         if choice == 1:
-            import subprocess
-            subprocess.run(["python", "modules/inventory.py"])
-            break
-
+            inventory_main()
         elif choice == 2:
-            import subprocess
-            subprocess.run(["python", "modules/orders.py"])
-            break 
-
+            orders_main()
         elif choice == 3:
             import subprocess
             subprocess.run(["python", "modules/quotes.py"])
-            break
-
         elif choice == 4:
             import subprocess
             subprocess.run(["python", "modules/reports.py"])
-            break
-
         elif choice == 5:
             print("Saliendo del programa...")
-            break
+            sys.exit()
 
-main()
-
+if __name__ == "__main__":
+    main()  

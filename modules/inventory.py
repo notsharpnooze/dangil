@@ -1,7 +1,7 @@
 import csv
 import os  
 import uuid
-import subprocess
+import sys
 
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')    
@@ -39,10 +39,17 @@ def add_product():
     while True:
         file = open('database/inventory.csv', 'a', newline='')
         clear()
+        print("Agregar producto (escribe 'c' en cualquier campo para cancelar y volver al menú)")
         p_id = str(uuid.uuid4())[:4]
         name = input("Ingrese el nombre del producto: ")
+        if name.lower() == 'c':
+            return 
         quantity = input("Ingrese la cantidad del producto: ")
+        if quantity.lower() == 'c':
+            return
         price = input("Ingrese el precio de compra del producto: ")
+        if price.lower() == 'c':
+            return
 
         with open('database/inventory.csv', 'a', newline='') as file:
             writer = csv.writer(file)
@@ -59,8 +66,7 @@ def add_product():
         if cont == "s":
             add_product()
         if cont == "n":
-            main()
-            break
+            return
         
 def view_inventory():
     if not os.path.exists("database/inventory.csv"):
@@ -89,8 +95,7 @@ def view_inventory():
 
         choice = input("Presiona 'x' para organizar, o 'b' para regresar al menu principal: ").strip().lower()
         if choice == "b":
-            main()
-            break
+            return
         elif choice == "x":
             data = sort_entries(data)
         else:
@@ -143,9 +148,8 @@ def update_product():
             print(f"{i:<5} {row[1]:<15} {row[2]:<8} {row[3]:<8}")
                   
         select = input('\nSeleccione el producto a actualizar (número) o "c" para cancelar: ').strip()
-
         if select.lower() == 'c':
-            main()
+            return
 
         try:   
             index = int(select) - 1
@@ -181,7 +185,7 @@ def update_product():
 
         print("\nProducto actualizado exitosamente.\n")
         input("Presiona Enter para continuar...")
-        main()
+        return
 
 def delete_product():
     with open('database/inventory.csv', 'r') as file:
@@ -191,7 +195,7 @@ def delete_product():
         print("\n No hay productos para eliminar. \n")
         return
 
-    header = rows[1]
+    header = rows[0]
     data = rows[1:]
 
     filtered = data
@@ -205,9 +209,7 @@ def delete_product():
         print(f"{i:<5} {row[1]:<15} {row[2]:<8} {row[3]:<8}")
 
     select = input('\nSeleccione el producto a eliminar (número) o "c" para cancelar: ').strip()
-
     if select.lower() == 'c':
-        main()
         return
 
     try:
@@ -226,7 +228,7 @@ def delete_product():
     if confirm != 's':
         print("Eliminación cancelada.")
         clear()
-        main()
+        return
 
 
     # Eliminar el producto
@@ -240,31 +242,26 @@ def delete_product():
 
     print("\nProducto eliminado exitosamente.\n")
     input("Presiona Enter para continuar...")
-    main()
+    return
 
 def main():
-    clear()
-    show_banner()
     while True:
+        clear()
+        show_banner()
         show_menu()
         choice = get_choice()
         
         if choice == 1:
             add_product()
-            break
         elif choice == 2:
             view_inventory()
-            break
         elif choice == 3:
             update_product()
-            break
         elif choice == 4:
             delete_product()
-            break
         elif choice == 5:
-            import subprocess
-            subprocess.run(["python", "main.py"])
-            break
-                                                        
-main()
-            
+            return
+
+if __name__ == "__main__":
+    main()
+     
