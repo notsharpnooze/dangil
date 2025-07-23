@@ -23,13 +23,14 @@ def show_banner():
 def show_menu():
     print("1. Agregar orden")
     print("2. Ver órdenes")
-    print("3. Volver al menú principal")
+    print("3. Despacho")
+    print("4. Salir")
 
 def get_choice():
     while True:
         try:
             choice = int(input("Seleccione una opción: "))
-            if choice in [1, 2, 3]:
+            if choice in [1, 2, 3, 4]:
                 return choice
             else:
                 print("Opción no válida. Intente de nuevo.")
@@ -429,7 +430,6 @@ def delete_order(order_id):
     input("Presiona Enter para continuar...")
     return
 
-
 def view_orders():
     # Load orders
     orders_path = "database/orders/orders.csv"
@@ -532,6 +532,142 @@ def view_orders():
     elif choice == "4":
         return
 
+def sell(): #NOT COMPLETE
+    clear()
+    orders_path = "database/orders/orders.csv"
+    sold_path = "database/orders/sold.csv"
+
+    if not os.path.exists(orders_path):
+        print("No hay órdenes registradas.")
+        return
+    
+        # List orders
+    with open(orders_path, "r") as f:
+        rows = list(csv.reader(f))
+    if len(rows) <= 1:
+        print("No hay órdenes registradas.")
+        return
+
+    header = rows[0]
+    data = rows[1:]
+    print("\nÓrdenes registradas:")
+    print(f"{'N°':<5} {'ID':<8} {'Cliente':<15} {'Fecha':<12} {'Descripción':<20}")
+    print("-" * 60)
+    for i, row in enumerate(data, start=1):
+        print(f"{i:<5} {row[0]:<8} {row[1]:<15} {row[2]:<12} {row[3]:<20}")
+
+    select = input('\nSeleccione la orden (número) o "c" para cancelar: ').strip()
+    if select.lower() == "c":
+        return
+    try:
+        idx = int(select) - 1
+        if idx < 0 or idx >= len(data):
+            print("Número de orden no válido.")
+            return
+        order = data[idx]
+        order_id = order[0]
+
+        # Show order details before selling/cancelling
+        customer = order[1]
+        order_date = order[2]
+        description = order[3]
+        clear()
+        print("\n========= Detalles del cliente =========")
+        print(f"Cliente: {customer}")
+        print(f"Fecha: {order_date}")
+        print(f"Descripción: {description}")
+        print("=" * 40)
+
+        # Show TXT order details
+        order_txt_path = f"database/orders/ind_desc/{order_id}_order.txt"
+        if os.path.exists(order_txt_path):
+            with open(order_txt_path, "r") as f:
+                for line in f:
+                    print(line.strip())
+        else:
+            print("No se encontró el archivo de detalles para esta orden.")
+
+        # Show CSV order details
+        order_csv_path = f"database/orders/ind_orders/{order_id}_order.csv"
+        print("\n======== Productos en la orden =========")
+        if os.path.exists(order_csv_path):
+            with open(order_csv_path, "r") as f:
+                reader = csv.reader(f)
+                rows = list(reader)
+                if rows:
+                    header = rows[0]
+                    data_products = rows[1:]
+                    print(f"{header[0]:<15} {header[1]:<10} {header[2]:<8}")
+                    print("-" * 40)
+                    for row in data_products:
+                        if not row or len(row) < 3:
+                            continue
+                        print(f"{row[0]:<15} {row[1]:<10} {row[2]:<8}")
+        else:
+            print("No se encontró el archivo de productos para esta orden.")
+
+    except ValueError:
+        print("Entrada no válida.")
+        return
+    
+    choice = input("¿La orden fue vendida (v) o cancelada (c)? ").strip().lower()
+    if choice == "v":
+        selling_price = input("Ingrese el precio de venta total: ").strip()
+
+        # Save to sold.csv
+        sold_exists = os.path.exists(sold_path)
+        with open(sold_path, "a", newline='') as f:
+            writer = csv.writer(f)
+            if not sold_exists or os.path.getsize(sold_path) == 0:
+                writer.writerow(header + ["PrecioVenta"])
+            writer.writerow(order + [selling_price])
+        print("Orden marcada como vendida y registrada en sold.csv.")
+    elif choice == "c":
+
+        # Return products to inventory
+        order_csv_path = f"database/orders/ind_orders/{order_id}_order.csv"
+        inventory_path = "database/inventory.csv"
+        if os.path.exists(order_csv_path):
+            with open(order_csv_path, "r") as f:
+                order_rows = list(csv.reader(f))
+            order_data = order_rows[1:]  
+            with open(inventory_path, "r") as f:
+                inv_rows = list(csv.reader(f))
+            inv_header = inv_rows[0]
+            inv_data = inv_rows[1:]
+            for prod in order_data:
+                if not prod or len(prod) < 3:
+                    continue
+                nombre, cantidad = prod[0], int(prod[1])
+                for inv_row in inv_data:
+                    if inv_row[1] == nombre:
+                        inv_row[2] = str(int(inv_row[2]) + cantidad)
+            with open(inventory_path, "w", newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(inv_header)
+                writer.writerows(inv_data)
+            print("Productos devueltos al inventario.")
+        print("Orden cancelada y eliminada.")
+    else:
+        print("Opción no válida.")
+        return   
+
+    # Remove order from orders.csv
+    data.pop(idx)
+    with open(orders_path, "w", newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        writer.writerows(data)
+
+    # Delete order files
+    order_csv_path = f"database/orders/ind_orders/{order_id}_order.csv"
+    order_txt_path = f"database/orders/ind_desc/{order_id}_order.txt"
+    for path in [order_csv_path, order_txt_path]:
+        if os.path.exists(path):
+            os.remove(path)
+
+    input("Presiona Enter para continuar...")
+
 def main():
     while True:
         clear()
@@ -544,6 +680,8 @@ def main():
         elif choice == 2:
             view_orders()
         elif choice == 3:
+            sell()
+        elif choice == 4:
             return
 
 if __name__ == "__main__":
