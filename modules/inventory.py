@@ -207,7 +207,7 @@ def delete_product():
     print("-" * 50)
     for i, row in enumerate(filtered, start=1):
         print(f"{i:<5} {row[1]:<15} {row[2]:<8} {row[3]:<8}")
-
+    
     select = input('\nSeleccione el producto a eliminar (número) o "c" para cancelar: ').strip()
     if select.lower() == 'c':
         return
