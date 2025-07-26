@@ -86,12 +86,11 @@ def view_inventory():
     while True:
         clear()
         print("\nInventario actual:\n")
-        # Print only first 4 columns for display
+        
         print(f"{header[1]:<15} {header[2]:<15} {header[3]:<8}")
         print("-" * 50)
         for row in data:
             print(f"{row[1]:<15} {row[2]:<15} {row[3]:<8}")
-        print()
 
         choice = input("Presiona 'x' para organizar, o 'b' para regresar al menu principal: ").strip().lower()
         if choice == "b":
@@ -135,57 +134,58 @@ def update_product():
             return
         
         header = rows[0]
-        data = rows[1:]
+        data = rows[1:]        
 
-        filtered = data
-        filtered = sort_entries(filtered)
+        while True:
+            clear()
+            print("\nProductos disponibles para actualizar:\n")
+            
+            print(f"{header[1]:<15} {header[2]:<8} {header[3]:<8}")
+            print("-" * 50)
+            for i, row in enumerate(data, start=1):
+                print(f"{i:<5} {row[1]:<15} {row[2]:<8} {row[3]:<8}")
 
-        clear()
-        print("\nProductos disponibles para actualizar:\n")
-        print(f"{header[1]:<15} {header[2]:<8} {header[3]:<8}")
-        print("-" * 50)
-        for i, row in enumerate(filtered, start=1):
-            print(f"{i:<5} {row[1]:<15} {row[2]:<8} {row[3]:<8}")
-                  
-        select = input('\nSeleccione el producto a actualizar (número) o "c" para cancelar: ').strip()
-        if select.lower() == 'c':
-            return
-
-        try:   
-            index = int(select) - 1
-            if index < 0 or index >= len(filtered):
-                print("Número de producto no válido.")
+            choice = input('\nSeleccione el producto a actualizar (número)\n "x" para ordenar, "c" para cancelar: ').strip()
+            if choice.lower() == 'c':
                 return
-            to_update = filtered[index]
-        except ValueError:
-            print("Entrada no válida. Por favor ingrese un número.")
-            return
-        
-        #Confirmación de actualización
-        print(f"\nQuieres actualizar {to_update[1]}? ")
-        confirm = input("Presiona 's' para confirmar o cualquier otra tecla para cancelar: ").strip().lower()
-        if confirm != 's':
-            print("Actualización cancelada.")
-            return
-        
-        # Solicitar nuevos datos
-        nuevo_nombre = input(f"Nuevo nombre [{to_update[1]}]: ").strip() or to_update[1]
-        nueva_cantidad = input(f"Nueva cantidad [{to_update[2]}]: ").strip() or to_update[2]
-        nuevo_precio = input(f"Nuevo precio [{to_update[3]}]: ").strip() or to_update[3]
-   
-        # Buscar el índice real en data
-        real_index = data.index(to_update)
-        data[real_index] = [nuevo_nombre, nueva_cantidad, nuevo_precio]
+            elif choice == "x":
+                data = sort_entries(data)
+                continue 
+            try:   
+                index = int(choice) - 1
+                if index < 0 or index >= len(data):
+                    print("Número de producto no válido.")
+                    return
+                to_update = data[index]
+            except ValueError:
+                print("Entrada no válida. Por favor ingrese un número.")
+                return
+            
+            #Confirmación de actualización
+            print(f"\nQuieres actualizar {to_update[1]}? ")
+            confirm = input("Presiona 's' para confirmar o cualquier otra tecla para cancelar: ").strip().lower()
+            if confirm != 's':
+                print("Actualización cancelada.")
+                return
+            
+            # Solicitar nuevos datos
+            nuevo_nombre = input(f"Nuevo nombre [{to_update[1]}]: ").strip() or to_update[1]
+            nueva_cantidad = input(f"Nueva cantidad [{to_update[2]}]: ").strip() or to_update[2]
+            nuevo_precio = input(f"Nuevo precio [{to_update[3]}]: ").strip() or to_update[3]
+    
+            # Buscar el índice real en data
+            real_index = data.index(to_update)
+            data[real_index] = [nuevo_nombre, nueva_cantidad, nuevo_precio]
 
-        # Guardar cambios en el archivo
-        with open('database/inventory.csv', 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(header)
-            writer.writerows(data)
+            # Guardar cambios en el archivo
+            with open('database/inventory.csv', 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(header)
+                writer.writerows(data)
 
-        print("\nProducto actualizado exitosamente.\n")
-        input("Presiona Enter para continuar...")
-        return
+            print("\nProducto actualizado exitosamente.\n")
+            input("Presiona Enter para continuar...")
+            return
 
 def delete_product():
     with open('database/inventory.csv', 'r') as file:
@@ -207,13 +207,13 @@ def delete_product():
     print("-" * 50)
     for i, row in enumerate(filtered, start=1):
         print(f"{i:<5} {row[1]:<15} {row[2]:<8} {row[3]:<8}")
-    
-    select = input('\nSeleccione el producto a eliminar (número) o "c" para cancelar: ').strip()
-    if select.lower() == 'c':
-        return
+    print()
 
+    choice = input('\nSeleccione el producto a eliminar (número) o "c" para cancelar: ').strip()
+    if choice.lower() == 'c':
+        return
     try:
-        index = int(select) - 1
+        index = int(choice) - 1
         if index < 0 or index >= len(filtered):
             print("Número de producto no válido.")
             return
