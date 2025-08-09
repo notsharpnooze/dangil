@@ -25,7 +25,7 @@ def show_menu():
     print("2. Ordenes de productos")
     print("3. Presupuestos y cotizaciones")
     print("4. Reportes y estadísticas")
-    print("5. Salir")
+    print("\n5. Salir\n")
 
 def get_choice():
     while True:

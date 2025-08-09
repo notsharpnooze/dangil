@@ -22,7 +22,7 @@ def show_menu():
     print("1. Agregar orden")
     print("2. Ver órdenes")
     print("3. Despacho")
-    print("4. Salir")
+    print("\n4. Salir\n")
 
 def get_choice():
     while True:
@@ -109,7 +109,7 @@ def add_order():
             while True:
                 clear()
                 print("\nProductos disponibles para agregar a la orden:\n")
-                print(f"{inv_header[1]:<15} {inv_header[2]:<8} {inv_header[3]:<8}")
+                print(f"{'N°':<5} {inv_header[1]:<15} {inv_header[2]:<8} {inv_header[3]:<8}")
                 print("-" * 50)
                 for i, row in enumerate(inv_data, start=1):
                     print(f"{i:<5} {row[1]:<15} {row[2]:<8} {row[3]:<8}")
@@ -141,9 +141,14 @@ def add_order():
                     input("Presiona Enter para continuar...")
                     continue
 
+                if int(amount) > int(selected[2]):
+                    print("No hay suficiente cantidad disponible en inventario.")
+                    input("Presiona Enter para continuar...")
+                    continue
+
                 writer.writerow([selected[1], amount, selected[3]])
                 print(f"Producto '{selected[1]}' agregado a la orden.")
-                otro = input("¿Desea agregar otro producto? (s/n): "),
+                otro = input("¿Desea agregar otro producto? (s/n): ").strip().lower()   
                 if otro != "s":
                     break
 
@@ -181,12 +186,14 @@ def add_order():
 
     #TXT template and details
     with open(filepath, "w") as f:
-        f.write("\n =========== Detalles de la orden: ============\n")
+        f.write("\n ======== Detalles de la orden: =========\n")
+        clear()
         detalles = input("\nIngrese los detalles de la orden: \n")
         f.write(detalles + "\n")
 
-    print(f"\nOrden creada, la puedes visualizar en \"Ver ordenes\"\n")
+    print(f"\nOrden creada, a continuación se mostrarán los detalles.")
     input("Presiona cualquier tecla para continuar...")
+    show_order_detail(id)
     return
 
 #END OF THE ENTRY LOOP
@@ -553,6 +560,88 @@ def view_orders():
     elif choice == "b":
         return
 
+def show_order_detail(order_id):
+    orders_path = "database/orders/orders.csv"
+    # Busca la orden en orders.csv
+    with open(orders_path, "r") as file:
+        rows = [r for r in csv.reader(file) if r]
+    header = rows[0]
+    data = rows[1:]
+    order = next((r for r in data if r[0] == order_id), None)
+    if not order:
+        print("No se encontró la orden.")
+        input("Presiona Enter para continuar...")
+        return
+
+    customer = order[1]
+    order_date = order[2]
+    description = order[3]
+
+    clear()
+    print("\n========= Detalles del cliente =========")
+    print(f"Cliente: {customer}")
+    print(f"Fecha: {order_date}")
+    print(f"Descripcion: {description}")
+    print("=" * 40)
+
+    # Show TXT order details
+    order_txt_path = f"database/orders/ind_desc/{order_id}_order.txt"
+    if os.path.exists(order_txt_path):
+        with open(order_txt_path, "r") as f:
+            for line in f:
+                print(line.strip())
+    else:
+        print("No se encontró el archivo de detalles para esta orden.")
+
+    # Show CSV order details
+    order_csv_path = f"database/orders/ind_orders/{order_id}_order.csv"
+    print("\n======== Productos en la orden =========")
+    total = 0.0
+    if os.path.exists(order_csv_path):
+        with open(order_csv_path, "r") as f:
+            reader = csv.reader(f)
+            rows = list(reader)
+            if rows:
+                header = rows[0]
+                data = rows[1:]
+                print(f"{header[0]:<15} {header[1]:<10} {header[2]:<8}")
+                print("-" * 40)
+                for row in data:
+                    if not row or len(row) < 3:
+                        continue
+                    print(f"{row[0]:<15} {row[1]:<10} {row[2]:<8}")
+                    try:
+                        cantidad = float(row[1])
+                        precio = float(str(row[2]).replace(',', '.'))
+                        subtotal = cantidad * precio
+                        total += subtotal
+                    except (ValueError, IndexError):
+                        continue
+                print("-" * 40)
+                print(f"{'TOTAL':<25}{total:<8.2f}")
+    else:
+        print("No se encontró el archivo de productos para esta orden.")
+
+    # Opciones
+    print("\nOpciones:")
+    print("a. Editar orden")
+    print("d. Eliminar orden")
+    print("b. Volver al menú\n")
+
+    choice = input("Seleccione una opcion: ").strip().lower()
+    if choice == "a":
+        update_order(order_id)
+        show_order_detail(order_id)  # Vuelve a mostrar tras editar
+    elif choice == "d":
+        delete_order(order_id)
+        return
+    elif choice == "b":
+        return
+    else:
+        print("Opción no válida.")
+        input("Presiona Enter para continuar...")
+        show_order_detail(order_id)
+
 def sell():
     clear()
     orders_path = "database/orders/orders.csv"
@@ -574,7 +663,7 @@ def sell():
     header = rows[0]
     data = rows[1:]
 
-    print("\nÓrdenes registradas:")
+    print("\nÓrdenes registradas:\n")
     print(f"{'N°':<5} {'ID':<8} {'Cliente':<15} {'Fecha':<12} {'Descripcion':<20}")
     print("-" * 60)
     for i, row in enumerate(data, start=1):

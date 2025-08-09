@@ -19,7 +19,7 @@ def show_menu():
     print("1. Agregar producto")
     print("2. Ver inventario")
 
-    print("\n3. Volver al menú principal")
+    print("\n3. Volver al menú principal\n")
 
 def get_choice():
     while True:

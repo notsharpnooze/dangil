@@ -23,7 +23,7 @@ def show_banner():
 
 def show_menu():
     print("1. Calculadora de precio de venta")
-    print("2. Calculadora de cotizaciones")
+    print("2. Cotizaciones")
     print("\n3. Volver al menú principal\n")
 
 def get_choice():
@@ -133,7 +133,7 @@ def quote_calculator():
     clear()
     print("1. Crear nueva cotización")
     print("2. Ver cotizaciones guardadas")
-    print("3. Volver al menú principal")
+    print("\n3. Volver al menú principal")
     
     choice = input("\nseleccione una opcion: ")
     if choice == '1':
@@ -307,7 +307,7 @@ def view_quotes():
         print("1. Eliminar cotización")
         print("2. Editar descripción")
         print("3. Convertir en orden")
-        print("4. Volver al listado")
+        print("4. Volver al listado\n")
 
         action = input("Selecciona una opción: ").strip()
 
@@ -333,9 +333,9 @@ def view_quotes():
         elif action == "3":
             quote_id = f"Q{uuid.uuid4().hex[:6].upper()}"
             order_id = str(uuid.uuid4())[:5]
-            client = input("Nombre del cliente: \n")
+            client = input("\nNombre del cliente: ")
             date = datetime.date.today().strftime("%d/%m/%Y")
-            description = input("Descripción de la orden: \n")
+            description = input("\nDescripción de la orden: ")
 
             # Lee los productos de la cotización seleccionada
             with open(filename, "r") as quote_file:
