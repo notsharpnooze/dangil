@@ -18,15 +18,14 @@ def show_banner():
 def show_menu():
     print("1. Agregar producto")
     print("2. Ver inventario")
-    print("3. Actualizar producto")
-    print("4. Eliminar producto")
-    print("5. Volver al menú principal")
+
+    print("\n3. Volver al menú principal")
 
 def get_choice():
     while True:
         try:
             choice = int(input("Seleccione una opción: "))
-            if choice in [1, 2, 3, 4, 5]:
+            if choice in [1, 2, 3]:
                 return choice
             else:
                 print("Opción no válida. Intente de nuevo.")
@@ -36,9 +35,16 @@ def get_choice():
 #OPTIONS
 def add_product():
     
+    def write_header_if_needed(writer, file_exists):
+        header = ['ID', 'Nombre', 'Cantidad', 'Precio']
+        if not file_exists or os.path.getsize('database/inventory.csv') == 0:
+            writer.writerow(header)
+    clear()
+
     while True:
-        file = open('database/inventory.csv', 'a', newline='')
-        clear()
+        #file = open('database/inventory.csv', 'a', newline='')
+        #clear()
+        print("\n=== Agregar Producto ===\n")
         print("Agregar producto (escribe 'c' en cualquier campo para cancelar y volver al menú)")
         p_id = str(uuid.uuid4())[:4]
         name = input("Ingrese el nombre del producto: ")
@@ -51,13 +57,17 @@ def add_product():
         if price.lower() == 'c':
             return
 
+        # Write to CSV file
+        os.makedirs('database', exist_ok=True)
+        file_exists = os.path.exists('database/inventory.csv')
         with open('database/inventory.csv', 'a', newline='') as file:
             writer = csv.writer(file)
-            if file.tell() == 0:
-                writer.writerow(['ID','Nombre', 'Cantidad', 'Precio'])
+
+            #if file.tell() == 0:
+            write_header_if_needed(writer, file_exists)
             writer.writerow([p_id, name, quantity, price])
         clear()
-        print("Producto agregado exitosamente.")
+        print(f"{name} agregado exitosamente.")
            
         cont = input("¿Desea agregar otro producto? (s/n): ").lower().strip()
         if cont not in {"s","n"}:
@@ -68,45 +78,13 @@ def add_product():
         if cont == "n":
             return
         
-def view_inventory():
-    if not os.path.exists("database/inventory.csv"):
-        print("\n No hay datos... \n")
-        return
-
-    with open("database/inventory.csv", "r") as file:
-        rows = list(csv.reader(file))
-
-    if len(rows) <= 1:
-        print("\n El archivo esta vacio. \n")
-        return
-
-    header = rows[0]
-    data = rows[1:]
-
-    while True:
-        clear()
-        print("\nInventario actual:\n")
-        
-        print(f"{header[1]:<15} {header[2]:<15} {header[3]:<8}")
-        print("-" * 50)
-        for row in data:
-            print(f"{row[1]:<15} {row[2]:<15} {row[3]:<8}")
-
-        choice = input("Presiona 'x' para organizar, o 'b' para regresar al menu principal: ").strip().lower()
-        if choice == "b":
-            return
-        elif choice == "x":
-            data = sort_entries(data)
-        else:
-            print("Opcion no valida.")
-
 def sort_entries(data):
     sort_options = {
         "1": ("Nombre (A-Z)", lambda x: x[1].lower()),
         "2": ("Cantidad (Menor a Mayor)", lambda x: int(x[2])),
         "3": ("Precio (Menor a Mayor)", lambda x: int(x[3])),
         "4": ("Por orden de entrada", None)
-}
+    }
 
     while True:
         clear()
@@ -123,6 +101,105 @@ def sort_entries(data):
         else:
             print("Opcion no valida.")
     return data
+
+def search_product(data, header):
+    clear()
+    print("\nBuscar producto:")
+    print("¿Buscar por?")
+    print("1. Nombre")
+    print("2. Cantidad")
+    print("3. Precio")
+    option = input("Seleccione una opción (1-3): ").strip()
+    query = input("Ingrese el valor a buscar: ").strip().lower()
+    results = filter_data(data, option, query)
+
+    if not results:
+        print("\nNo se encontro algun producto.")
+        input("Presiona enter para continuar...")
+        return None
+
+    clear()
+    print(f"\nHay {len(results)} resultado(s):\n")
+    print(f"{header[0]:<15} {header[1]:<15} {header[2]:<8} {header[3]:<8}")
+    print("-" * 50)
+    for row in results:
+        print(f"{row[0]:<15} {row[1]:<15} {row[2]:<8} {row[3]:<8}")
+
+    input("\nPress Enter to continue...")
+    return results
+        
+def filter_data(data, option, query):
+    if option == "1": #nombre
+        return [row for row in data if query in row[1].lower()]
+    elif option == "2": #cantidad
+        return [row for row in data if query in row[2].lower()]
+    elif option == "3": #precio
+        return [row for row in data if query in row[3].lower()]
+    else:
+        print("Opción no válida.")
+        return []
+
+def view_inventory():
+    if not os.path.exists("database/inventory.csv"):
+        print("\n No hay datos... \n")
+        return
+
+    with open("database/inventory.csv", "r") as file:
+        rows = list(csv.reader(file))
+
+    if len(rows) <= 1:
+        print("\n El archivo esta vacio. \n")
+        return
+
+    header = rows[0]
+    full_data = rows[1:]
+    current_data = full_data
+
+    while True:
+        clear()
+        print("\nInventario actual:\n")
+
+        print(f"{'No.':<5}{header[1]:<15} {header[2]:<15} {header[3]:<8}")
+        print("-" * 50)
+        for i, row in enumerate(current_data, start=1):
+            print(f"{i:<5} {row[1]:<15} {row[2]:<15} {row[3]:<8}")
+
+        choice = input(
+            "\nSeleccione una opción: \n"
+            "\n'f' para buscar producto \n"
+            "'x' para ordenar productos \n"  
+            "'d' para eliminar producto \n"
+            "'a' para actualizar producto \n"
+            "\n'b' para volver al menú principal \n"
+            ).strip().lower()
+        
+        if choice == 'b':
+            return
+        
+        elif choice == 'f':
+            filtered = search_product(current_data, header)
+            if filtered is not None:
+                current_data = filtered
+
+        elif choice == 'x':
+            current_data = sort_entries(current_data)
+
+        #FIXME:
+        elif choice == 'd':
+            current_data = delete_product(current_data)
+
+        else:
+            print("Opción no válida. Por favor, intente de nuevo.")
+            continue
+        
+        #choice = input("Presiona 'x' para organizar, o 'b' para regresar al menu principal: ").strip().lower()
+        #if choice == "b":
+        #    return
+        #elif choice == "x":
+        #    data = sort_entries(data)
+        #else:
+        #    print("Opcion no valida.")
+
 
 def update_product():
     
@@ -256,10 +333,6 @@ def main():
         elif choice == 2:
             view_inventory()
         elif choice == 3:
-            update_product()
-        elif choice == 4:
-            delete_product()
-        elif choice == 5:
             return
 
 if __name__ == "__main__":

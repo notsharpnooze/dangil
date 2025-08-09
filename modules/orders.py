@@ -2,8 +2,6 @@ import os
 import uuid
 import datetime
 import csv
-import subprocess
-import sys
 
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -29,17 +27,15 @@ def show_menu():
 def get_choice():
     while True:
         try:
-            choice = int(input("Seleccione una opción: "))
+            choice = int(input("Seleccione una opcion: "))
             if choice in [1, 2, 3, 4]:
                 return choice
             else:
-                print("Opción no válida. Intente de nuevo.")
+                print("Opcion no válida. Intente de nuevo.")
         except ValueError:
             print("Entrada no válida. Por favor ingrese un número.")
 
-
-#DATA
-# GENERATE UNIQUE ORDER ID
+#GENERATE UNIQUE ORDER ID
 customer_id = str(uuid.uuid4())[:5]
 
 def sort_entries(data):
@@ -49,7 +45,6 @@ def sort_entries(data):
         "3": ("Precio (Menor a Mayor)", lambda x: int(x[3])),
         "4": ("Por orden de entrada", None)
 }
-
     while True:
         clear()
         print("\nComo quieres ver los resultados?")
@@ -65,7 +60,6 @@ def sort_entries(data):
         else:
             print("Opcion no valida.")
     return data
-#OPTIONS
 
 def write_csv_header_if_needed(writer, file_exists):
     header = ['id', 'customer', 'order_date', 'description']
@@ -75,7 +69,7 @@ def write_csv_header_if_needed(writer, file_exists):
 def add_order():
     clear()
 
-    id = customer_id
+    id = str(uuid.uuid4())[:5]
     print("Presiona 'c' en cualquier campo para cancelar y volver al menú")
     customer = input("Ingrese el nombre del cliente: ")
     if customer.lower() == 'c':
@@ -149,7 +143,7 @@ def add_order():
 
                 writer.writerow([selected[1], amount, selected[3]])
                 print(f"Producto '{selected[1]}' agregado a la orden.")
-                otro = input("¿Desea agregar otro producto? (s/n): ").strip().lower()
+                otro = input("¿Desea agregar otro producto? (s/n): "),
                 if otro != "s":
                     break
 
@@ -233,8 +227,8 @@ def update_order(order_id):
             print("\nOpciones:")
             print("1. Editar producto/cantidad")
             print("2. Eliminar producto")
-            print("3. Terminar edición")
-            choice = input("Seleccione una opción: ").strip()
+            print("3. Terminar edicion")
+            choice = input("Seleccione una opcion: ").strip()
             if choice == "1":
                 while True:
                     # Show inventory for product selection
@@ -279,7 +273,7 @@ def update_order(order_id):
                     if prod_select:
                         inv_idx = int(prod_select) - 1
                         if inv_idx < 0 or inv_idx >= len(inv_data):
-                            print("Número de producto no válido.")
+                            print("Número de producto no válido.\n")
                             input("Presiona Enter para continuar...")
                             continue
                         name = inv_data[inv_idx][1]
@@ -321,7 +315,7 @@ def update_order(order_id):
                     try:
                         idx = int(prod_num) - 1
                         if idx < 0 or idx >= len(valid_rows):
-                            print("Número inválido.")
+                            print("Número inválido.\n")
                             input("Presiona Enter para continuar...")
                             continue
                         selected_row = valid_rows[idx]
@@ -329,7 +323,7 @@ def update_order(order_id):
                         data.pop(data_idx)
                         break
                     except ValueError:
-                        print("Entrada inválida.")
+                        print("Entrada inválida.\n")
                         input("Presiona Enter para continuar...")
                         continue
             elif choice == "3":
@@ -345,22 +339,22 @@ def update_order(order_id):
     if os.path.exists(order_txt_path):
         with open(order_txt_path, "r") as f:
             lines = f.readlines()
-        print("\nDescripción actual:")
+        print("\nDescripcion actual:")
         for line in lines:
             print(line.strip())
-        nueva_desc = input("\nNueva descripción (deja vacío para no cambiar) o 'c' para cancelar:\n").strip()
+        nueva_desc = input("\nNueva descripcion (deja vacío para no cambiar) o 'c' para cancelar:\n").strip()
         if nueva_desc.lower() == 'c':
             return
         if nueva_desc:
             with open(order_txt_path, "w") as f:
                 f.write(nueva_desc + "\n")
-            print("Descripción actualizada.")
+            print("Descripcion actualizada.")
         else:
-            print("Descripción no modificada.")
+            print("Descripcion no modificada.")
     else:
-        print("No se encontró el archivo de descripción.")
+        print("No se encontró el archivo de descripcion.")
 
-    input("\nEdición terminada. Presiona Enter para continuar...")
+    input("\nEdicion terminada. Presiona Enter para continuar...")
     return
 
 def delete_order(order_id):
@@ -368,7 +362,7 @@ def delete_order(order_id):
     # Confirm deletion
     confirm = input("¿Estás seguro que deseas eliminar esta orden? (s/n): ").strip().lower()
     if confirm != "s":
-        print("Eliminación cancelada.")
+        print("Eliminación cancelada.\n")
         input("Presiona Enter para continuar...")
         return
 
@@ -378,55 +372,68 @@ def delete_order(order_id):
     orders_path = "database/orders/orders.csv"
     inventory_path = "database/inventory.csv"
 
-    # Return inventory items used in the order
+    # Return products to inventory (only if there are product rows)
+    if os.path.exists(order_csv_path) and os.path.getsize(order_csv_path) > 0:
+        with open(order_csv_path, "r", newline='') as f:
+            rows = [r for r in csv.reader(f) if r]
+        if rows:  # rows[0] is header for items
+            item_header = rows[0]
+            item_data = rows[1:]
+            # Load inventory
+            if os.path.exists(inventory_path):
+                with open(inventory_path, "r", newline='') as inv_file:
+                    inv_rows = [r for r in csv.reader(inv_file) if r]
+                if inv_rows:
+                    inv_header = inv_rows[0]
+                    inv_data = inv_rows[1:]
+                    for row in item_data:
+                        if len(row) < 2:
+                            continue
+                        nombre = row[0]
+                        try:
+                            cantidad = int(row[1])
+                        except ValueError:
+                            continue
+                        for inv_row in inv_data:
+                            if inv_row[1] == nombre:
+                                try:
+                                    inv_row[2] = str(int(inv_row[2]) + cantidad)
+                                except ValueError:
+                                    pass
+                    with open(inventory_path, "w", newline='') as inv_file:
+                        w = csv.writer(inv_file)
+                        w.writerow(inv_header)
+                        w.writerows(inv_data)
+
+    # Delete individual order files
     if os.path.exists(order_csv_path):
-        with open(order_csv_path, "r") as f:
-            reader = csv.reader(f)
-            rows = list(reader)
-        header = rows[0]
-        data = rows[1:]
-
-        # Load inventory
-        with open(inventory_path, "r") as inv_file:
-            inv_rows = list(csv.reader(inv_file))
-        inv_header = inv_rows[0]
-        inv_data = inv_rows[1:]
-
-        # Return items to inventory
-        for row in data:
-            if not row or len(row) < 3:
-                continue
-            nombre = row[0]
-            cantidad = int(row[1])
-            for inv_row in inv_data:
-                if inv_row[1] == nombre:
-                    inv_row[2] = str(int(inv_row[2]) + cantidad)
-
-        # Save inventory
-        with open(inventory_path, "w", newline='') as inv_file:
-            writer = csv.writer(inv_file)
-            writer.writerow(inv_header)
-            writer.writerows(inv_data)
-
-        # Delete order CSV
         os.remove(order_csv_path)
-
-    # Delete order TXT
     if os.path.exists(order_txt_path):
         os.remove(order_txt_path)
 
-    # Remove order from orders.csv
+    # Remove order entry from orders.csv (single safe pass)
     if os.path.exists(orders_path):
-        with open(orders_path, "r") as f:
-            rows = list(csv.reader(f))
-        header = rows[0]
-        data = [row for row in rows[1:] if row and row[0] != order_id]
-        with open(orders_path, "w", newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(header)
-            writer.writerows(data)
+        with open(orders_path, "r", newline='') as f:
+            rows = [r for r in csv.reader(f) if r]
+        if rows:
+            orders_header = rows[0]
+            # Ensure header looks correct; recreate if malformed
+            if orders_header and orders_header[0] != 'id':
+                orders_header = ['id', 'customer', 'order_date', 'description']
+                orders_data = []
+            else:
+                orders_data = [r for r in rows[1:] if r and r[0] != order_id]
+            with open(orders_path, "w", newline='') as f:
+                w = csv.writer(f)
+                w.writerow(orders_header)
+                w.writerows(orders_data)
+        else:
+            # Recreate with header if totally empty
+            with open(orders_path, "w", newline='') as f:
+                w = csv.writer(f)
+                w.writerow(['id', 'customer', 'order_date', 'description'])
 
-    print("Orden eliminada y productos devueltos al inventario.")
+    print("Orden eliminada y productos devueltos (si correspondía) al inventario.\n")
     input("Presiona Enter para continuar...")
     return
 
@@ -435,14 +442,17 @@ def view_orders():
     orders_path = "database/orders/orders.csv"
     if not os.path.exists(orders_path):
         print("\nNo hay ordenes registradas.\n")
+        input("Presiona Enter para continuar...")
         return
 
     with open(orders_path, "r") as file:
-        rows = list(csv.reader(file))
-    if len(rows) <= 1:
+        rows = [r for r in csv.reader(file) if r]
+    if not rows or len(rows) == 1:
+        clear()
         print("\nNo hay ordenes registradas.\n")
+        input("Presiona Enter para continuar...")
         return
-
+    
     header = rows[0]
     data = rows[1:]
 
@@ -477,7 +487,7 @@ def view_orders():
     print("\n========= Detalles del cliente =========")
     print(f"Cliente: {customer}")
     print(f"Fecha: {order_date}")
-    print(f"Descripción: {description}")
+    print(f"Descripcion: {description}")
     print("=" * 40)
 
     # Show TXT order details
@@ -492,6 +502,7 @@ def view_orders():
     # Show CSV order details
     order_csv_path = f"database/orders/ind_orders/{order_id}_order.csv"
     print("\n======== Productos en la orden =========")
+    total = 0.0  # <-- Agrega esta línea
     if os.path.exists(order_csv_path):
         with open(order_csv_path, "r") as f:
             reader = csv.reader(f)
@@ -501,10 +512,19 @@ def view_orders():
                 data = rows[1:]
                 print(f"{header[0]:<15} {header[1]:<10} {header[2]:<8}")
                 print("-" * 40)
-            for row in data:
-                if not row or len(row) < 3:
-                    continue  # Skip empty or incomplete rows
-                print(f"{row[0]:<15} {row[1]:<10} {row[2]:<8}")
+                for row in data:
+                    if not row or len(row) < 3:
+                        continue  # Skip empty or incomplete rows
+                    print(f"{row[0]:<15} {row[1]:<10} {row[2]:<8}")
+                    try:
+                        cantidad = float(row[1])
+                        precio = float(str(row[2]).replace(',', '.'))
+                        subtotal = cantidad * precio
+                        total += subtotal
+                    except (ValueError, IndexError):
+                        continue
+                print("-" * 40)
+                print(f"{'TOTAL':<25}{total:<8.2f}")  # <-- Muestra el total
     else:
         print("No se encontró el archivo de productos para esta orden.")
 
@@ -512,46 +532,50 @@ def view_orders():
     #Other Options
     
     print("\nOpciones:")
-    print("1. Editar orden")
-    print("2. Eliminar orden")
-    print("3. Exportar como PDF")
-    print("4. Volver al menú")
+    print("a. Editar orden")
+    print("d. Eliminar orden")
+    print("c. Exportar como PDF")
 
-    choice = input("Seleccione una opción: ").strip()
-    if choice == "1":
+    print("\nb. Volver al menú \n")
+
+    choice = input("Seleccione una opcion: ").strip()
+    if choice == "a":
         update_order(order_id)  # To do
         return
-    elif choice == "2":
+    elif choice == "d":
         delete_order(order_id)  # To do
         return
-    #elif choice == "3":
+    #elif choice == "c":
      #   export_order_pdf(order_id, customer, order_date, description, order_csv_path, order_txt_path)
       #  print("Orden exportada como PDF.")
        # input("Presiona Enter para continuar...")
         #return
-    elif choice == "4":
+    elif choice == "b":
         return
 
-def sell(): #NOT COMPLETE
+def sell():
     clear()
     orders_path = "database/orders/orders.csv"
     sold_path = "database/orders/sold.csv"
 
     if not os.path.exists(orders_path):
-        print("No hay órdenes registradas.")
+        print("No hay órdenes registradas.\n")
+        input("Presiona Enter para continuar...")
         return
     
         # List orders
     with open(orders_path, "r") as f:
         rows = list(csv.reader(f))
     if len(rows) <= 1:
-        print("No hay órdenes registradas.")
+        print("No hay órdenes registradas.\n")
+        input("Presiona Enter para continuar...")
         return
 
     header = rows[0]
     data = rows[1:]
+
     print("\nÓrdenes registradas:")
-    print(f"{'N°':<5} {'ID':<8} {'Cliente':<15} {'Fecha':<12} {'Descripción':<20}")
+    print(f"{'N°':<5} {'ID':<8} {'Cliente':<15} {'Fecha':<12} {'Descripcion':<20}")
     print("-" * 60)
     for i, row in enumerate(data, start=1):
         print(f"{i:<5} {row[0]:<8} {row[1]:<15} {row[2]:<12} {row[3]:<20}")
@@ -562,7 +586,8 @@ def sell(): #NOT COMPLETE
     try:
         idx = int(select) - 1
         if idx < 0 or idx >= len(data):
-            print("Número de orden no válido.")
+            print("Número de orden no válido.\n")
+            input("Presiona Enter para continuar...")
             return
         order = data[idx]
         order_id = order[0]
@@ -575,7 +600,7 @@ def sell(): #NOT COMPLETE
         print("\n========= Detalles del cliente =========")
         print(f"Cliente: {customer}")
         print(f"Fecha: {order_date}")
-        print(f"Descripción: {description}")
+        print(f"Descripcion: {description}")
         print("=" * 40)
 
         # Show TXT order details
@@ -649,7 +674,7 @@ def sell(): #NOT COMPLETE
             print("Productos devueltos al inventario.")
         print("Orden cancelada y eliminada.")
     else:
-        print("Opción no válida.")
+        print("Opcion no válida.")
         return   
 
     # Remove order from orders.csv
@@ -668,6 +693,26 @@ def sell(): #NOT COMPLETE
 
     input("Presiona Enter para continuar...")
 
+def save_order(order_id, customer, order_date, description, products):
+    # Guarda en orders.csv
+    os.makedirs("database/orders", exist_ok=True)
+    orders_path = "database/orders/orders.csv"
+    file_exists = os.path.exists(orders_path)
+    with open(orders_path, "a", newline='') as file:
+        writer = csv.writer(file)
+        if not file_exists or os.path.getsize(orders_path) == 0:
+            writer.writerow(['id', 'customer', 'order_date', 'description'])
+        writer.writerow([order_id, customer, order_date, description])
+
+    # Guarda productos en ind_orders
+    os.makedirs("database/orders/ind_orders", exist_ok=True)
+    order_csv_path = f"database/orders/ind_orders/{order_id}_order.csv"
+    with open(order_csv_path, "w", newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(["nombre", "cantidad", "precio"])
+        for prod in products:
+            writer.writerow(prod)
+
 def main():
     while True:
         clear()
@@ -685,4 +730,4 @@ def main():
             return
 
 if __name__ == "__main__":
-    main() 
+    main()
